@@ -8,7 +8,8 @@ import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import { Toaster } from "react-hot-toast"
 import Dashboard from './pages/Dashboard'
-import { checkAuth } from '../services/authService'
+import { checkAuth } from '../services/authService.js'
+import ResetPassword from './pages/ResetPassword'
 
 // import ProtectedRoute from './components/ProtectedRoutes'
 
@@ -67,6 +68,7 @@ const App = () => {
           element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
+        <Route path='/reset-password/:token' element={<ResetPassword />} />
 
 
       </Routes>

@@ -46,3 +46,9 @@ export const forgotPassword = (email) => {
         withCredentials: true
     });
 };
+
+export const resetPassword = (token, password) => {
+  return API.post(`/reset-password/${token}`, { password }, {
+    withCredentials: true
+  });
+};

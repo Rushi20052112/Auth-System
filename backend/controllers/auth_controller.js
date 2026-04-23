@@ -2,7 +2,7 @@ import { User } from "../models/user.js"
 import bcryptjs from "bcryptjs"
 import crypto from "crypto"
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js"
-import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail, sendResetSuccessful } from "../mailtrap/emails.js"
+import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail, sendResetSuccessful } from "../resend/emails.js"
 
 
 export const signup = async (req, res) => {
@@ -31,7 +31,7 @@ export const signup = async (req, res) => {
 
         generateTokenAndSetCookie(res, user._id)
 
-        // await sendVerificationEmail(user.email, verificationToken)
+        await sendVerificationEmail(user.email, verificationToken)
 
         res.status(201).json({
             success: true,
@@ -64,7 +64,7 @@ export const verifyEmail = async (req, res) => {
 
         await user.save()
 
-        // await sendWelcomeEmail(user.email, user.name)
+        await sendWelcomeEmail(user.email, user.name)
 
         res.status(201).json({
             success: true,
@@ -125,6 +125,7 @@ export const logout = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body
+    // const {token}=req.body
     try {
         const user = await User.findOne({ email })
         if (!user) {
@@ -141,7 +142,7 @@ export const forgotPassword = async (req, res) => {
 
         await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
 
-        res.status(200).json({ message: "Password reset link sent to your email" })
+        res.status(200).json({ message: "Password reset link sent to your email",token:resetToken })
     } catch (error) {
         console.error("Error sending welcome mail", error)
         throw new Error(`Error sending welcome email:${error}`)
@@ -171,6 +172,12 @@ export const resetPassword = async (req, res) => {
         await user.save()
 
         await sendResetSuccessful(user.email)
+
+         res.status(200).json({
+            success: true,
+            message: "Password resetted",
+        });
+
 
     } catch (error) {
         console.error("Error in reset email", error)
