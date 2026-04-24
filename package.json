@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.3",
     "mailtrap": "^4.5.1",
     "mongoose": "^9.3.3",
+    "nodemailer": "^7.0.13",
     "resend": "^6.12.2"
   },
   "devDependencies": {

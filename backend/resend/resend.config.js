@@ -1,12 +1,19 @@
 // resend/resend.config.js
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+export const transporter = nodemailer.createTransport({
+  host: process.env.BREVO_SMTP_HOST,
+  port: 587,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS,
+  },
+});
 
 export const sender = {
-    email: "onboarding@resend.dev",  // use your verified domain email in production
-    name: "Rushi",
+  email: "rushikeshrepale746@gmail.com",
+  name: "Rushi",
 };

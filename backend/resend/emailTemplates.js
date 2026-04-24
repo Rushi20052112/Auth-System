@@ -1,5 +1,8 @@
 // utils/emailTemplates.js
 
+import dotenv from "dotenv"
+dotenv.config()
+
 export const VERIFICATION_EMAIL_TEMPLATE = `
 <!DOCTYPE html>
 <html lang="en">
@@ -230,6 +233,93 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
             <td style="background-color:#f9f9f9; padding:20px 30px; text-align:center;">
               <p style="color:#999999; font-size:12px; margin:0;">
                 &copy; ${new Date().getFullYear()} Auth-System. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+export const WELCOME_EMAIL_TEMPLATE = (userName) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcome</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#667eea,#764ba2);padding:40px;text-align:center;">
+              <h1 style="color:#ffffff;margin:0;font-size:28px;">Welcome to Auth-System! 🎉</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#333333;margin-top:0;">Hey ${userName}! 👋</h2>
+              <p style="color:#666666;font-size:16px;line-height:1.6;">
+                Your account has been successfully verified. We're thrilled to have you on board!
+              </p>
+              <p style="color:#666666;font-size:16px;line-height:1.6;">
+                You can now access all features of Auth-System. Here's what you can do:
+              </p>
+
+              <!-- Features -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+                <tr>
+                  <td style="padding:10px;background:#f9f9f9;border-radius:6px;margin-bottom:10px;">
+                    ✅ &nbsp;<span style="color:#333;font-size:15px;">Secure login & logout</span>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td style="padding:10px;background:#f9f9f9;border-radius:6px;">
+                    ✅ &nbsp;<span style="color:#333;font-size:15px;">Password reset anytime</span>
+                  </td>
+                </tr>
+                <tr><td style="height:8px;"></td></tr>
+                <tr>
+                  <td style="padding:10px;background:#f9f9f9;border-radius:6px;">
+                    ✅ &nbsp;<span style="color:#333;font-size:15px;">Email verified account</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:30px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${process.env.CLIENT_URL}/login" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block;">
+                      Go to Dashboard →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color:#999999;font-size:14px;text-align:center;">
+                If you didn't create this account, please ignore this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f4f4f4;padding:20px;text-align:center;">
+              <p style="color:#aaaaaa;font-size:12px;margin:0;">
+                © 2026 Auth-System. All rights reserved.
               </p>
             </td>
           </tr>

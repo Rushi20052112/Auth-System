@@ -3,14 +3,15 @@ import {
     PASSWORD_RESET_REQUEST_TEMPLATE,
     VERIFICATION_EMAIL_TEMPLATE,
     PASSWORD_RESET_SUCCESS_TEMPLATE,
+    WELCOME_EMAIL_TEMPLATE,
 } from "./emailTemplates.js";
-import { resend, sender } from "./resend.config.js";
+import { transporter, sender } from "./resend.config.js";
 
 export const sendVerificationEmail = async (email, verificationToken) => {
     try {
-        const response = await resend.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: [email],
+        const response = await transporter.sendMail({
+            from: `"${sender.name}" <${sender.email}>`,
+            to: email,
             subject: "Verify your email",
             html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
         });
@@ -23,12 +24,11 @@ export const sendVerificationEmail = async (email, verificationToken) => {
 
 export const sendWelcomeEmail = async (email, userName) => {
     try {
-        const response = await resend.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: [email],
+        const response = await transporter.sendMail({
+            from: `"${sender.name}" <${sender.email}>`,
+            to: email,
             subject: "Welcome to Auth-System!",
-            html: `<h2>Hey ${userName}, welcome aboard! 🎉</h2>
-                   <p>Your account is verified and ready to go.</p>`,
+            html: WELCOME_EMAIL_TEMPLATE(userName),
         });
         console.log("Welcome email sent successfully", response);
     } catch (error) {
@@ -39,9 +39,9 @@ export const sendWelcomeEmail = async (email, userName) => {
 
 export const sendPasswordResetEmail = async (email, resetUrl) => {
     try {
-        const response = await resend.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: [email],
+        const response = await transporter.sendMail({
+            from: `"${sender.name}" <${sender.email}>`,
+            to: email,
             subject: "Reset your password",
             html: PASSWORD_RESET_REQUEST_TEMPLATE.replaceAll("{resetURL}", resetUrl),
         });
@@ -54,9 +54,9 @@ export const sendPasswordResetEmail = async (email, resetUrl) => {
 
 export const sendResetSuccessful = async (email) => {
     try {
-        const response = await resend.emails.send({
-            from: `${sender.name} <${sender.email}>`,
-            to: [email],
+        const response = await transporter.sendMail({
+            from: `"${sender.name}" <${sender.email}>`,
+            to: email,
             subject: "Password Reset Successful",
             html: PASSWORD_RESET_SUCCESS_TEMPLATE,
         });
