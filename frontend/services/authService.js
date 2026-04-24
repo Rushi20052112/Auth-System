@@ -3,7 +3,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "http://localhost:5000/api/auth",  // your backend URL
+    baseURL: import.meta.env.VITE_BASE_URL + "/api/auth",  // your backend URL
     withCredentials: true,                 // ✅ sends cookies on every request
 });
 
