@@ -25,9 +25,6 @@ export default function ForgotPassword() {
 
       toast.success(res.data.message);
 
-      // 👉 redirect to reset page or OTP page
-      navigate(`/reset-password/${res.data.token}`);
-
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Something went wrong"

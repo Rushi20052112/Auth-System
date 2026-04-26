@@ -1,21 +1,26 @@
 import jwt from "jsonwebtoken"
 
-export const verifyToken= async (req,res,next)=>{
-    const token=req.cookies.token
+export const verifyToken = async (req, res, next) => {
+    const token = req.cookies.token
 
-    if(!token){
-        return res.status(401).json({message:"Access denied, UnAuthorized"})
+    if (!token) {
+        return res.status(401).json({ message: "Access denied, UnAuthorized" })
     }
 
     try {
-        const decoded=jwt.verify(token,process.env.JWT_SECRET)
-        
-        if(!decoded) return res.status(401).json({message:"Access denied, UnAuthorized"})
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
 
-        req.userId=decoded.userId
+        if (!decoded) return res.status(401).json({ message: "Access denied, UnAuthorized" })
+
+        req.userId = decoded.userId
         next()
+
     } catch (error) {
-        console.error("Error verifying token",error)
-        res.status(401).json({message:"Invalid token"})
+        // Token expired — let client know to refresh
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Token expired", expired: true })
+        }
+        console.error("Error verifying token", error)
+        res.status(401).json({ message: "Invalid token" })
     }
 }

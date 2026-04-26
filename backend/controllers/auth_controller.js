@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken"
 import { User } from "../models/user.js"
 import bcryptjs from "bcryptjs"
 import crypto from "crypto"
@@ -29,7 +30,10 @@ export const signup = async (req, res) => {
 
         await user.save();
 
-        generateTokenAndSetCookie(res, user._id)
+        // save refresh token to DB
+        const refreshToken = generateTokenAndSetCookie(res, user._id)
+        user.refreshToken = refreshToken
+        await user.save()
 
         await sendVerificationEmail(user.email, verificationToken)
 
@@ -43,6 +47,7 @@ export const signup = async (req, res) => {
         })
     } catch (error) {
         console.log("Error in signup", error)
+        res.status(500).json({ success: false, message: "Server Error" })
     }
 }
 
@@ -58,8 +63,8 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid or expired verification code" })
         }
 
-        user.isverified = true,
-         user.verificationToken = undefined,
+        user.isverified = true
+        user.verificationToken = undefined
         user.verificationTokenExpiresAt = undefined
 
         await user.save()
@@ -94,12 +99,13 @@ export const login = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid credentials" })
         }
 
-        generateTokenAndSetCookie(res, user._id)
-
+        // save refresh token to DB
+        const refreshToken = generateTokenAndSetCookie(res, user._id)
+        user.refreshToken = refreshToken
         user.lastlogin = new Date()
         await user.save()
 
-        res.status(201).json({
+        res.status(200).json({
             success: true,
             message: "Logged in Successfully",
             user: {
@@ -115,17 +121,32 @@ export const login = async (req, res) => {
 }
 
 export const logout = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken
+
+    // remove refresh token from DB
+    if (refreshToken) {
+        await User.findOneAndUpdate(
+            { refreshToken },
+            { refreshToken: undefined }
+        )
+    }
+
     res.clearCookie("token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",  // ⚠️ must match your login cookie options exactly
-    });
-    res.status(200).json({ message: "Logout Successfully" });
-};
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 👈
+    })
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 👈
+    })
+
+    res.status(200).json({ message: "Logout Successfully" })
+}
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body
-    // const {token}=req.body
     try {
         const user = await User.findOne({ email })
         if (!user) {
@@ -142,7 +163,7 @@ export const forgotPassword = async (req, res) => {
 
         await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
 
-        res.status(200).json({ message: "Password reset link sent to your email",token:resetToken })
+        res.status(200).json({ message: "Password reset link sent to your email" })
     } catch (error) {
         console.error("Error sending welcome mail", error)
         throw new Error(`Error sending welcome email:${error}`)
@@ -165,19 +186,18 @@ export const resetPassword = async (req, res) => {
 
         const hashedPassword = await bcryptjs.hash(password, 10)
 
-        user.password = hashedPassword,
-            user.resetPasswordToken = undefined,
-            user.resetPasswordExpiresAt = undefined
+        user.password = hashedPassword
+        user.resetPasswordToken = undefined
+        user.resetPasswordExpiresAt = undefined
 
         await user.save()
 
         await sendResetSuccessful(user.email)
 
-         res.status(200).json({
+        res.status(200).json({
             success: true,
             message: "Password resetted",
-        });
-
+        })
 
     } catch (error) {
         console.error("Error in reset email", error)
@@ -200,50 +220,76 @@ export const checkAuth = async (req, res) => {
 
 export const resendToken = async (req, res) => {
     try {
-
-
-        // 🔍 find user
-        const user = await User.findById(req.userId);
+        const user = await User.findById(req.userId)
 
         if (!user) {
             return res.status(400).json({
                 success: false,
                 message: "User not found",
-            });
+            })
         }
 
-        // ❌ already verified
         if (user.isverified) {
             return res.status(400).json({
                 success: false,
                 message: "Email already verified",
-            });
+            })
         }
 
-        // 🔢 generate new OTP
-        const newToken = Math.floor(100000 + Math.random() * 900000).toString();
+        const newToken = Math.floor(100000 + Math.random() * 900000).toString()
 
-        // ⏳ update expiry (24 hrs)
-        user.verificationToken = newToken;
-        user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
+        user.verificationToken = newToken
+        user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000
 
-        await user.save();
+        await user.save()
 
-        // 📧 send email
-        await sendVerificationEmail(user.email, newToken);
+        await sendVerificationEmail(user.email, newToken)
 
-        // ✅ response
         res.status(200).json({
             success: true,
             message: "New verification code sent",
-        });
+        })
 
     } catch (error) {
-        console.log("Error in resendVerificationEmail:", error);
-
+        console.log("Error in resendVerificationEmail:", error)
         res.status(500).json({
             success: false,
             message: "Server error",
-        });
+        })
     }
-};
+}
+
+export const refreshAccessToken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken
+
+    if (!refreshToken) {
+        return res.status(401).json({ success: false, message: "No refresh token" })
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET)
+        const user = await User.findById(decoded.userId)
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(401).json({ success: false, message: "Invalid refresh token" })
+        }
+
+        const newAccessToken = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        )
+
+        res.cookie("token", newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 👈
+            maxAge: 15 * 60 * 1000
+        })
+
+        res.status(200).json({ success: true, message: "Access token refreshed" })
+
+    } catch (error) {
+        res.status(401).json({ success: false, message: "Invalid or expired refresh token" })
+    }
+}
